@@ -25,7 +25,7 @@ openocd.secret
 
 # Libraries
 *.lib
-#*.a
+*.a
 *.la
 *.lo
 
