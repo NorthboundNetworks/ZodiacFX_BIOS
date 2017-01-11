@@ -31,7 +31,7 @@
 #define CONFIG_BOOTLOADER_H_
 
 
-#define VERSION "1.00"		// Firmware version number
+#define VERSION "0.10"		// Firmware version number
 
 #define SHARED_BUFFER_LEN 2048
 #define FLASH_BUFFER 0x450000
