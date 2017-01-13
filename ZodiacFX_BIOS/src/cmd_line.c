@@ -170,17 +170,11 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 	// Update firmware
 	if (strcmp(command, "update") == 0)
 	{
-		printf("Please begin firmware upload\r\n");
+		printf("Updating firmware\r\n");
 		firmware_update();
+		printf("\r\nUpdate complete.\r\n");
 		return;
 
-	}
-
-	// Run firmware
-	if (strcmp(command, "run") == 0)
-	{
-		firmware_run();
-		return;
 	}
 			
 	// Display help
@@ -193,7 +187,7 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 	// Restart switch
 	if (strcmp(command, "restart")==0)
 	{
-		printf("Restarting the Zodiac FX, please reopen your terminal application.\r\n");
+		printf("Restarting the Zodiac FX.\r\n");
 		for(int x = 0;x<100000;x++);	// Let the above message get sent to the terminal before detaching
 		udc_detach();	// Detach the USB device before restart
 		rstc_start_software_reset(RSTC);	// Software reset
@@ -267,7 +261,7 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		return;
 	}
 	
-	if (strcmp(command, "flash")==0)
+	if (strcmp(command, "firmware")==0)
 	{
 		// Display contents of firmware update region (ending @ first 0xFFFFFFFF)
 		unsigned long* pmem = (unsigned long*)FLASH_STORE;
@@ -315,7 +309,8 @@ void printhelp(void)
 	printf("upload\r\n");
 	printf("update\r\n");
 	printf("buffer\r\n");
-	printf("flash\r\n");
+	printf("firmware\r\n");
+	printf("restart\r\n");
 	printf("status\r\n");
 	printf("\r\n");
 	return;

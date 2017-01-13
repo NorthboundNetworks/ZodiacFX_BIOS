@@ -187,14 +187,12 @@ void firmware_update(void)
 	
 	while(update_address < FLASH_STORE_END)
 	{
-		printf("Copy data from: 0x%08x -> 0x%08x\r\n", buffer_address, update_address);
 		ul_rc = flash_write(update_address, buffer_address, IFLASH_PAGE_SIZE, 0);
 		if (ul_rc != FLASH_RC_OK)
 		{
 			printf("-F- Flash programming error %lu\n\r", (unsigned long)ul_rc);
 			return;
 		}
-		
 		update_address += IFLASH_PAGE_SIZE;
 		buffer_address += IFLASH_PAGE_SIZE;
 	}
@@ -215,9 +213,6 @@ void firmware_upload(void)
 	printf("\r\n");
 	printf("\r\n");
 	printf("Firmware upload complete.\r\n");
-	//for(int x = 0;x<100000;x++);	// Let the above message get send to the terminal before detaching
-	//udc_detach();	// Detach the USB device before restart
-	//rstc_start_software_reset(RSTC);	// Software reset
 	return;
 }
 
@@ -231,16 +226,13 @@ void firmware_run(void)
 	// Pointer to the Application Section
 	void (*firmware_code_entry)(void);
 	   
-	// -- Disable interrupts
 	// Disable IRQ
 	__disable_irq();
-	//SysTick->CTRL = 0; // Disable System timer
-	// Disable IRQs
-	for (i = 0; i < 8; i ++) NVIC->ICER[i] = 0xFFFFFFFF;
+	
 	// Clear pending IRQs
+	for (i = 0; i < 8; i ++) NVIC->ICER[i] = 0xFFFFFFFF;
 	for (i = 0; i < 8; i ++) NVIC->ICPR[i] = 0xFFFFFFFF;
 
-	// -- Modify vector table location
 	// Barriers
 	__DSB();
 	__ISB();
@@ -258,11 +250,10 @@ void firmware_run(void)
 	__DSB();
 	__ISB();
 
-	// -- Enable interrupts
+	//Enable interrupts
 	__enable_irq();
-     // Jump to user Reset Handler in the application
-     firmware_code_entry();
-
+    // Jump to user Reset Handler in the application
+    firmware_code_entry();
 }
 
 /*
