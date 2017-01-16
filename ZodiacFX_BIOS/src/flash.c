@@ -102,6 +102,38 @@ void firmware_buffer_init(void)
 }
 
 /*
+*	Firmware check function
+*
+*/
+int firmware_check(void)
+{
+	unsigned long* firmware_pmem = (unsigned long*)FLASH_STORE;
+	unsigned long* buffer_pmem = (unsigned long*)FLASH_BUFFER;
+		
+	if(*buffer_pmem == 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
+	{
+		return -1;		// No firmware in the buffer or run locations
+	}
+	
+	if(*buffer_pmem != 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
+	{
+		return 0;		// No firmware in the buffer but there is in the run location
+	}
+
+	while(firmware_pmem <= FLASH_BUFFER_END)
+	{
+		if(*firmware_pmem != *buffer_pmem)
+		{
+			return 0;		// Buffer and run location are different so there must be a new version
+		}
+		buffer_pmem++;
+		firmware_pmem++;
+	}
+	return 1;			// Buffer and run location are the same so run the firmware
+}
+
+
+/*
 *	Firmware update function
 *
 */
@@ -210,10 +242,18 @@ void firmware_upload(void)
 	{
 		printf("Error: failed to write firmware to memory\r\n");
 	}
-	printf("\r\n");
-	printf("\r\n");
-	printf("Firmware upload complete.\r\n");
 	return;
+}
+
+/*
+*	Restart
+*
+*/
+void restart(void)
+{
+	udc_detach();	// Detach the USB device before restart
+	rstc_start_software_reset(RSTC);	// Software reset
+	while (1);
 }
 
 /*

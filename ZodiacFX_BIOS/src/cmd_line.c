@@ -49,7 +49,6 @@ uint8_t uCLIContext = 0;
 // Internal Functions
 void command_root(char *command, char *param1, char *param2, char *param3);
 void printintro(void);
-void printhelp(void);
 
 
 /*
@@ -161,121 +160,23 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 	// Upload firmware
 	if (strcmp(command, "upload") == 0)
 	{
-		printf("Please begin firmware upload\r\n");
-		firmware_upload();		
+		printf("Please begin firmware upload using XMODEM\r\n");
+		firmware_upload();
+		printf("\r\n");
+		printf("Firmware upload complete.\r\n");
+		printf("\r\n");
+		printf("\r\n");
+		restart();	
 		return;
 
-	}
-
-	// Update firmware
-	if (strcmp(command, "update") == 0)
-	{
-		printf("Updating firmware\r\n");
-		firmware_update();
-		printf("\r\nUpdate complete.\r\n");
-		return;
-
-	}
-			
-	// Display help
-	if (strcmp(command, "help") == 0)
-	{
-		printhelp();
-		return;
 	}
 
 	// Restart switch
 	if (strcmp(command, "restart")==0)
 	{
-		printf("Restarting the Zodiac FX.\r\n");
-		for(int x = 0;x<100000;x++);	// Let the above message get sent to the terminal before detaching
-		udc_detach();	// Detach the USB device before restart
-		rstc_start_software_reset(RSTC);	// Software reset
-		while (1);
-	}
-
-	// Display firmware version
-	if (strcmp(command, "status") == 0)
-	{
-		int buffer_size = 0;
-		// check flash contents
-		unsigned long* firmware_pmem = (unsigned long*)FLASH_STORE;
-		unsigned long* buffer_pmem = (unsigned long*)FLASH_BUFFER;
-		
-		if(*firmware_pmem == 0xFFFFFFFF)
-		{
-			printf("No firmware found\r\n");
-		} else {
-			while(firmware_pmem <= FLASH_BUFFER_END)
-			{
-				if(*firmware_pmem == 0xFFFFFFFF)
-				{
-					printf("Firmware contains %d bytes\n\r", buffer_size);
-					break;
-				}
-				buffer_size +=4;
-				firmware_pmem++;
-			}
-		}
-
-		if(*buffer_pmem == 0xFFFFFFFF)
-		{
-			printf("Upload buffer empty\r\n");
-		} else {
-			buffer_size = 0;
-			while(buffer_pmem <= FLASH_BUFFER_END)
-			{
-				if(*buffer_pmem == 0xFFFFFFFF)
-				{
-					printf("Buffer contains %d bytes\n\r", buffer_size);
-					break;
-				}
-				buffer_size +=4;
-				buffer_pmem++;
-			}
-		}
-		
-		return;
+		restart();
 	}
 	
-	// Display help
-	if (strcmp(command, "help") == 0)
-	{
-		printhelp();
-		return;
-	}
-
-	if (strcmp(command, "buffer")==0)
-	{
-		// Display contents of firmware update region (ending @ first 0xFFFFFFFF)
-		unsigned long* pmem = (unsigned long*)FLASH_BUFFER;
-		while(pmem <= FLASH_BUFFER_END)
-		{
-			if(*pmem == 0xFFFFFFFF)
-			{
-				return;
-			}
-			printf("Addr: %p  Val: 0x%l08x\n\r", (void *)pmem, *pmem);
-			pmem++;
-		}
-		return;
-	}
-	
-	if (strcmp(command, "firmware")==0)
-	{
-		// Display contents of firmware update region (ending @ first 0xFFFFFFFF)
-		unsigned long* pmem = (unsigned long*)FLASH_STORE;
-		while(pmem <= FLASH_STORE_END)
-		{
-			if(*pmem == 0xFFFFFFFF)
-			{
-				return;
-			}
-			printf("Addr: %p  Val: 0x%l08x\n\r", (void *)pmem, *pmem);
-			pmem++;
-		}
-		return;
-	}
 	
 	// Unknown Command
 	printf("Unknown command\r\n");
@@ -290,28 +191,9 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 void printintro(void)
 {
 	printf("\r\n");
-	printf("Zodiac FX Bootloader %s\r\n", VERSION);
-	printf("\r\n\n");
-	printf("Type 'help' for a list of available commands\r\n");
+	printf("Zodiac FX BIOS %s\r\n", VERSION);
+	printf("\r\n");
+	printf("No firmware installed, please type 'upload' to install new firmware.\r\n");
 	return;
 }
 
-/*
-*	Print a list of available commands
-*
-*
-*/
-void printhelp(void)
-{
-	printf("\r\n");
-	printf("The following commands are currently available:\r\n");
-	printf("\r\n");
-	printf("upload\r\n");
-	printf("update\r\n");
-	printf("buffer\r\n");
-	printf("firmware\r\n");
-	printf("restart\r\n");
-	printf("status\r\n");
-	printf("\r\n");
-	return;
-}

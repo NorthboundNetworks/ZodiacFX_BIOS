@@ -55,19 +55,23 @@ void HardFault_Handler(void)
 */
 int main (void)
 {	 
+	int flash_check = -1;
 	unsigned long* firmware_pmem = (unsigned long*)FLASH_STORE;
 	unsigned long* buffer_pmem = (unsigned long*)FLASH_BUFFER;
 	
-	if(memcmp(firmware_pmem, buffer_pmem, 4) == 0 && *firmware_pmem != 0xFFFFFFFF)		// If both location are the same and not blank then run firmware
+	flash_check = firmware_check();		// Check buffer and firmware regions
+	
+	if(flash_check == 1)		// If both location are the same and not blank then run the existng firmware
 	{
 		firmware_run();
 	}
 	
-	if(memcmp(firmware_pmem, buffer_pmem, 4) != 0 && *buffer_pmem != 0xFFFFFFFF)		// If the buffers are different then there must be a new version, update and run
-	{
+	if(flash_check == 0)		// If the buffers are different then there must be a new version, update and run new version
+	{					
 		firmware_update();
 		firmware_run();
 	}
+	  
 	  
 	uint32_t wdt_mode, timeout_value;
 	char cCommand[64];

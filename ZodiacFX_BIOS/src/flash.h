@@ -33,9 +33,11 @@
 #define FLASH_H_
 
 void get_serial(uint32_t *uid_buf);
+int firmware_check(void);
 void firmware_upload(void);
 void firmware_update(void);
 void firmware_run(void);
+void restart(void);
 int flash_write_page(uint8_t *flash_page);
 void firmware_buffer_init(void);
 void firmware_store_init(void);
