@@ -1,1 +1,1 @@
-# ZodiacFX_Bios
+# ZodiacFX_BIOS
