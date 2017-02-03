@@ -44,6 +44,11 @@ void firmware_store_init(void);
 int xmodem_xfer(void);
 void xmodem_clear_padding(uint8_t *buff);
 
+// Verification testing commands
+int write_verification(uint32_t location, uint64_t value);
+int get_verification(void);
+int verification_check(void);
+
 #define X_EOT 0x04
 #define X_ACK 0x06
 #define X_NAK 0x15
