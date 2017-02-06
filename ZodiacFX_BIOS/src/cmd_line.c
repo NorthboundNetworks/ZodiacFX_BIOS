@@ -192,7 +192,7 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		uint32_t addr = IFLASH_ADDR + IFLASH_SIZE - IFLASH_PAGE_SIZE;
 		//uint64_t ver_val = 0x4E5000ECCF020046;
 		// Reversed for testing:
-		uint64_t ver_val = 0x460002CFEC00504E;
+		uint64_t ver_val = 0x58460001FEF04E4E;
 		write_verification(addr, ver_val);
 		return;
 	}
@@ -204,10 +204,9 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		if(get_verification())
 		{				
 			printf("\r\n");
-			printf("identifier: %c\r\n", verify.identifier);
-			printf("version:    %d.%d\r\n", (verify.version/100), (verify.version%100));
+			printf("identifier: %.2s\r\n", verify.signature);
 			printf("length:     %d bytes\r\n", verify.length);
-			printf("device:     %c\r\n", verify.device);
+			printf("device:     %.2s\r\n", verify.device);
 			printf("\r\n");
 		}
 		else
