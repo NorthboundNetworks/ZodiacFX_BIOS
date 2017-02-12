@@ -23,7 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Author: Paul Zanna <paul@northboundnetworks.com>
+ * Authors: Paul Zanna <paul@northboundnetworks.com>
+ *		  & Kristopher Chen <Kristopher@northboundnetworks.com>
  *
  */
 
@@ -31,6 +32,13 @@
 #define COMMANDS_H_
 
 #include "conf_bios.h"
+
+struct integrity_check
+{
+	uint8_t		signature[2];
+	uint32_t	length;
+	uint8_t		device[2];
+} __attribute__((__packed__));
 
 void task_command(char *str, char * str_last);
 

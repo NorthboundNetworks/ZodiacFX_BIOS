@@ -23,7 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Author: Paul Zanna <paul@northboundnetworks.com>
+ * Authors: Paul Zanna <paul@northboundnetworks.com>
+ *		  & Kristopher Chen <Kristopher@northboundnetworks.com>
  *
  */
 
@@ -40,6 +41,7 @@
 
 // Global variables
 extern int charcount, charcount_last;
+extern struct integrity_check verify;
 
 // Local Variables
 bool showintro = true;
@@ -164,9 +166,16 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		firmware_upload();
 		printf("\r\n");
 		printf("Firmware upload complete.\r\n");
-		printf("\r\n");
-		printf("\r\n");
-		restart();	
+		if(verification_check() == 0)
+		{
+			restart();
+		}
+		else
+		{
+			printf("\r\n");
+			printf("Firmware verification check failed\r\n");
+			printf("\r\n");
+		}
 		return;
 
 	}
@@ -177,6 +186,97 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		restart();
 	}
 	
+	// Write test verification value to flash
+	if (strcmp(command, "write_verification")==0)
+	{
+		uint32_t addr = IFLASH_ADDR + IFLASH_SIZE - IFLASH_PAGE_SIZE;
+		//uint64_t ver_val = 0x4E5000ECCF020046;
+		// Reversed for testing:
+		uint64_t ver_val = 0x58460001FEF04E4E;
+		write_verification(addr, ver_val);
+		return;
+	}
+	
+	// Check test verification value in flash
+	if (strcmp(command, "check_verification")==0)
+	{
+		uint64_t check_val = 0;
+		if(get_verification())
+		{				
+			printf("\r\n");
+			printf("identifier: %.2s\r\n", verify.signature);
+			printf("length:     %d bytes\r\n", verify.length);
+			printf("device:     %.2s\r\n", verify.device);
+			printf("\r\n");
+		}
+		else
+		{
+			printf("verification data not found");
+		}
+
+		
+		return;
+	}
+	
+	// Check uploaded firmware
+	if (strcmp(command, "check_firmware")==0)
+	{
+		int ret = firmware_check();
+		if(ret == 0)
+		{
+			printf("\r\n");
+			printf("new version found - needs to be written\r\n");
+			printf("\r\n");
+		}
+		else if(ret == -1)
+		{
+			printf("\r\n");
+			printf("no firmware found in buffer or run locations\r\n");
+			printf("\r\n");
+			return;
+		}
+		else if(ret == 1)
+		{
+			printf("\r\n");
+			printf("buffer and run locations are identical\r\n");
+			printf("\r\n");
+			return;
+		}
+		
+		ret = verification_check();
+		if(ret == 0)
+		{
+			printf("\r\n");
+			printf("verification check passed\r\n");
+			printf("\r\n");
+		}
+		else if(ret == 1)
+		{
+			printf("\r\n");
+			printf("Northbound Networks identifier not found\r\n");
+			printf("\r\n");
+		}
+		else if(ret == 2)
+		{
+			printf("\r\n");
+			printf("device type does not match\r\n");
+			printf("\r\n");
+		}
+		else if(ret == 3)
+		{
+			printf("\r\n");
+			printf("verification data not found\r\n");
+			printf("\r\n");
+		}
+		else if(ret == 4)
+		{
+			printf("\r\n");
+			printf("length does not match\r\n");
+			printf("\r\n");
+		}
+		
+		return;
+	}
 	
 	// Unknown Command
 	printf("Unknown command\r\n");
@@ -185,7 +285,6 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 
 /*
 *	Print the intro screen
-*	ASCII art generated from http://patorjk.com/software/taag/
 *
 */
 void printintro(void)

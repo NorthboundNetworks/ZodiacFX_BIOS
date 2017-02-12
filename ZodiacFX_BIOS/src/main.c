@@ -23,7 +23,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  *
- * Author: Paul Zanna <paul@northboundnetworks.com>
+ * Authors: Paul Zanna <paul@northboundnetworks.com>
+ *		  & Kristopher Chen <Kristopher@northboundnetworks.com>
  *
  */
 
@@ -38,6 +39,7 @@
 // Global variables
 int charcount, charcount_last;
 uint32_t uid_buf[4];
+struct integrity_check verify;
 
 /*
 *	This function is where bad code goes to die!
@@ -68,8 +70,11 @@ int main (void)
 	
 	if(flash_check == 0)		// If the buffers are different then there must be a new version, update and run new version
 	{					
-		firmware_update();
-		firmware_run();
+		if(verification_check() == 0)
+		{
+			firmware_update();
+			firmware_run();
+		}
 	}
 	  
 	  

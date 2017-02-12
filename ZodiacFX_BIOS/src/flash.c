@@ -33,9 +33,11 @@
 #include <string.h>
 #include "flash.h"
 #include "conf_bios.h"
+#include "cmd_line.h"
 
 // Global variables
 uint8_t shared_buffer[SHARED_BUFFER_LEN];
+extern struct integrity_check verify;
 
 // Static variables
 static uint32_t page_addr;
@@ -109,7 +111,7 @@ int firmware_check(void)
 {
 	unsigned long* firmware_pmem = (unsigned long*)FLASH_STORE;
 	unsigned long* buffer_pmem = (unsigned long*)FLASH_BUFFER;
-		
+	
 	if(*buffer_pmem == 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
 	{
 		return -1;		// No firmware in the buffer or run locations
@@ -117,7 +119,7 @@ int firmware_check(void)
 	
 	if(*buffer_pmem != 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
 	{
-		return 0;		// No firmware in the buffer but there is in the run location
+		return 0;		// No firmware in the run location but there is in the buffer
 	}
 
 	while(firmware_pmem <= FLASH_BUFFER_END)
@@ -203,6 +205,31 @@ int flash_write_page(uint8_t *flash_page)
 	
 	ul_test_page_addr += IFLASH_PAGE_SIZE;
 	
+	return 1;
+}
+
+/*
+*	Write a page to a specific address in flash memory
+*
+*/
+int flash_write_page_s(uint8_t *flash_page, uint32_t address_s)
+{
+	if(address_s <= IFLASH_ADDR + IFLASH_SIZE - IFLASH_PAGE_SIZE)
+	{
+		ul_rc = flash_write(address_s, flash_page,
+		IFLASH_PAGE_SIZE, 0);
+	}
+	else
+	{
+		// Out of flash range
+		return 0;
+	}
+
+	if (ul_rc != FLASH_RC_OK)
+	{
+		return 0;
+	}
+		
 	return 1;
 }
 
@@ -423,3 +450,90 @@ xmodem_clear_padding(uint8_t *buff)
 	return;	// Padding characters removed
 }
 
+/*
+*	Write test verification value to flash
+*
+*/
+int write_verification(uint32_t location, uint64_t value)
+{
+	firmware_buffer_init();
+	
+	// Page to write to f/w
+	uint8_t verification_page[IFLASH_PAGE_SIZE] = {0};
+	
+	// Copy verification value
+	memcpy(verification_page, &value, sizeof(value));
+	
+	// Write specific page
+	if(flash_write_page_s(verification_page, location)) return 1;
+	// Write failed
+	return 0;
+}
+
+/*
+*	Check test verification value in flash
+*
+*/
+int get_verification(void)
+{
+	char* pflash = (char*)(FLASH_BUFFER_END-1);
+	char* buffer_start = (char*)FLASH_BUFFER;
+	
+	while(((*pflash) == '\xFF' || (*pflash) == '\0') && pflash > buffer_start)
+	{
+		pflash--;
+	}
+
+	if(pflash > buffer_start)
+	{
+		pflash-=7;
+
+		//memcpy(value, pflash, 8);
+		memcpy(&verify, pflash, 8);
+			
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int verification_check(void)
+{
+	// Populate integrity_check verify structure variable
+	get_verification();
+	
+	if(!(verify.signature[0] == 'N' && verify.signature[1] == 'N'))
+	{
+		return 1;
+	}
+	else if(!(verify.device[0] == 'F' && verify.device[1] == 'X'))
+	{
+		return 2;
+	}
+	else
+	{
+		// Compare specified length and uploaded binary length
+		char* pflash = (char*)(FLASH_BUFFER_END-1);
+		char* buffer_start = (char*)FLASH_BUFFER;
+		
+		while(*(pflash-1) == '\xFF' || *(pflash-1) == '\0')
+		{
+			if(pflash == buffer_start)
+			{
+				return 3;
+			}
+			pflash--;
+		}
+
+		if((pflash-buffer_start) != (char*)verify.length)
+		{
+			return 4;
+		}
+		
+	}
+		
+	return 0;
+
+}
