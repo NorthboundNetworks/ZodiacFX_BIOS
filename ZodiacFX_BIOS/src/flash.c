@@ -476,27 +476,6 @@ int write_verification(uint32_t location, uint64_t value)
 */
 int get_verification(void)
 {
-	char* pflash = (char*)(FLASH_BUFFER_END-1);
-	char* buffer_start = (char*)FLASH_BUFFER;
-	
-	while(((*pflash) == '\xFF' || (*pflash) == '\0') && pflash > buffer_start)
-	{
-		pflash--;
-	}
-
-	if(pflash > buffer_start)
-	{
-		pflash-=7;
-
-		//memcpy(value, pflash, 8);
-		memcpy(&verify, pflash, 8);
-			
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
 }
 
 int verification_check(void)
