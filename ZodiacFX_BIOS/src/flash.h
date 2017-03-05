@@ -57,5 +57,7 @@ int verification_check(void);
 //#define NEW_FW_BASE			(IFLASH_ADDR + (5*IFLASH_NB_OF_PAGES/8)*IFLASH_PAGE_SIZE)
 #define NEW_FW_MAX_SIZE		196608
 
+#define SUCCESS 0
+#define FAILURE 1
 
 #endif /* FLASH_H_ */

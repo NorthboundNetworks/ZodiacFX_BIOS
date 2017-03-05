@@ -77,7 +77,6 @@ int main (void)
 		}
 	}
 	  
-	  
 	uint32_t wdt_mode, timeout_value;
 	char cCommand[64];
 	char cCommand_last[64];
