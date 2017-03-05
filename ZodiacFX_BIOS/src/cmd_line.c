@@ -41,7 +41,7 @@
 
 // Global variables
 extern int charcount, charcount_last;
-extern struct integrity_check verify;
+extern struct verification_data verify;
 
 // Local Variables
 bool showintro = true;
@@ -200,19 +200,7 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 	// Check test verification value in flash
 	if (strcmp(command, "check_verification")==0)
 	{
-		uint64_t check_val = 0;
-		if(get_verification())
-		{				
-			printf("\r\n");
-			printf("identifier: %.2s\r\n", verify.signature);
-			printf("length:     %d bytes\r\n", verify.length);
-			printf("device:     %.2s\r\n", verify.device);
-			printf("\r\n");
-		}
-		else
-		{
-			printf("verification data not found");
-		}
+
 
 		
 		return;

@@ -37,7 +37,7 @@
 
 // Global variables
 uint8_t shared_buffer[SHARED_BUFFER_LEN];
-extern struct integrity_check verify;
+struct verification_data	verify;
 
 // Static variables
 static uint32_t page_addr;
@@ -468,14 +468,6 @@ int write_verification(uint32_t location, uint64_t value)
 	if(flash_write_page_s(verification_page, location)) return 1;
 	// Write failed
 	return 0;
-}
-
-/*
-*	Check test verification value in flash
-*
-*/
-int get_verification(void)
-{
 }
 
 int verification_check(void)

@@ -49,6 +49,12 @@ int write_verification(uint32_t location, uint64_t value);
 int get_verification(void);
 int verification_check(void);
 
+struct verification_data
+{
+	uint32_t calculated;	// Last 4 bytes from summed data
+	uint32_t found;			// 4 bytes at the end of uploaded firmware
+};
+
 #define X_EOT 0x04
 #define X_ACK 0x06
 #define X_NAK 0x15
