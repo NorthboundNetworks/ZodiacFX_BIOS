@@ -39,7 +39,6 @@
 // Global variables
 int charcount, charcount_last;
 uint32_t uid_buf[4];
-struct integrity_check verify;
 
 /*
 *	This function is where bad code goes to die!
