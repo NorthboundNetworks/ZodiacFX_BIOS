@@ -46,7 +46,6 @@ void xmodem_clear_padding(uint8_t *buff);
 
 // Verification testing commands
 int write_verification(uint32_t location, uint64_t value);
-int get_verification(void);
 int verification_check(void);
 
 struct verification_data
