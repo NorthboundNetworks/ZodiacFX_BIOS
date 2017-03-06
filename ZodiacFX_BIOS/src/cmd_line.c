@@ -166,7 +166,7 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		firmware_upload();
 		printf("\r\n");
 		printf("Firmware upload complete.\r\n");
-		if(verification_check() == 0)
+		if(verification_check() == SUCCESS)
 		{
 			restart();
 		}
@@ -232,34 +232,16 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		}
 		
 		ret = verification_check();
-		if(ret == 0)
+		if(ret == SUCCESS)
 		{
 			printf("\r\n");
 			printf("verification check passed\r\n");
 			printf("\r\n");
 		}
-		else if(ret == 1)
+		else if(ret == FAILURE)
 		{
 			printf("\r\n");
-			printf("Northbound Networks identifier not found\r\n");
-			printf("\r\n");
-		}
-		else if(ret == 2)
-		{
-			printf("\r\n");
-			printf("device type does not match\r\n");
-			printf("\r\n");
-		}
-		else if(ret == 3)
-		{
-			printf("\r\n");
-			printf("verification data not found\r\n");
-			printf("\r\n");
-		}
-		else if(ret == 4)
-		{
-			printf("\r\n");
-			printf("length does not match\r\n");
+			printf("verification check failed\r\n");
 			printf("\r\n");
 		}
 		
