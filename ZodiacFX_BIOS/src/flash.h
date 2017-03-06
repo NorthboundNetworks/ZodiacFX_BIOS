@@ -65,4 +65,8 @@ struct verification_data
 #define SUCCESS 0
 #define FAILURE 1
 
+#define SKIP	0
+#define UPDATE	1
+#define RUN		2
+
 #endif /* FLASH_H_ */

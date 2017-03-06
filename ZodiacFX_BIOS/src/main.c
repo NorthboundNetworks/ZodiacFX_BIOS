@@ -63,22 +63,18 @@ int main (void)
 	
 	flash_check = firmware_check();		// Check buffer and firmware regions
 	
-	if(flash_check == 1)		// If both location are the same and not blank then run the existng firmware
+	switch(flash_check)
 	{
-		firmware_run();
-	}
-	
-	if(flash_check == 0)		// If the buffers are different then there must be a new version, update and run new version
-	{					
-		if(verification_check() == 0)
-		{
+		case SKIP:
+			break;
+		case UPDATE:
 			firmware_update();
+			firmware_buffer_init();	// Clear update buffer
 			firmware_run();
-		}
-		else
-		{
+			break;
+		case RUN:
 			firmware_run();
-		}
+			break;		
 	}
 	  
 	uint32_t wdt_mode, timeout_value;

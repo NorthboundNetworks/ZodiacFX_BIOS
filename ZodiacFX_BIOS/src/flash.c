@@ -109,32 +109,81 @@ void firmware_buffer_init(void)
 /*
 *	Firmware check function
 *
+*		Zodiac FX flash is broken into two main firmware regions:
+*			- running firmware region
+*			- update buffer region
+*
+*		This function checks the validity and state of each region,
+*		with the following return values:
+*			- 0 (SKIP): no action required - both regions either doesn't
+*					exist, or are invalid (a manual firmware update is needed)
+*			- 1 (UPDATE): update required - update buffer region is valid, and
+*					 must be copied over the running firmware region
+*			- 2 (RUN): run existing firmware - update buffer region either
+*					 doesn't exist, or is invalid
 */
 int firmware_check(void)
 {
 	unsigned long* firmware_pmem = (unsigned long*)FLASH_STORE;
 	unsigned long* buffer_pmem = (unsigned long*)FLASH_BUFFER;
 	
-	if(*buffer_pmem == 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
+	if(*firmware_pmem == 0xFFFFFFFF)
 	{
-		return -1;		// No firmware in the buffer or run locations
-	}
-	
-	if(*buffer_pmem != 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
-	{
-		return 0;		// No firmware in the run location but there is in the buffer
-	}
-
-	while(firmware_pmem <= FLASH_BUFFER_END)
-	{
-		if(*firmware_pmem != *buffer_pmem)
+		// running firmware does not exist
+		
+		if(*buffer_pmem == 0xFFFFFFFF)
 		{
-			return 0;		// Buffer and run location are different so there must be a new version
+			// update firmware does not exist
+			
+			return SKIP;
 		}
-		buffer_pmem++;
-		firmware_pmem++;
+		else
+		{
+			// update firmware exists
+			
+			if(verification_check() == SUCCESS)
+			{
+				// firmware is valid
+			
+				return UPDATE;
+			}
+			else
+			{
+				// firmware is invalid
+				
+				return SKIP;
+			}
+		}
 	}
-	return 1;			// Buffer and run location are the same so run the firmware
+	else
+	{
+		// running firmware exists
+		
+		if(*buffer_pmem == 0xFFFFFFFF)
+		{
+			// update firmware does not exist
+			
+			return RUN;
+		}
+		else
+		{
+			// update firmware exists
+			
+			if(verification_check() == SUCCESS)
+			{
+				// firmware is valid
+			
+				return UPDATE;
+			}
+			else
+			{
+				// firmware is invalid
+				
+				return RUN;
+			}
+		}
+		
+	}
 }
 
 
