@@ -520,6 +520,8 @@ int verification_check(void)
 		}
 	}
 	
+	TRACE("fw_step_pmem %08x; fw_end_pmem %08x;\r\n", fw_step_pmem, fw_end_pmem);
+	
 	// Update structure entry
 	TRACE("CRC sum:   %04x\r\n", crc_sum);
 	verify.calculated = crc_sum;
