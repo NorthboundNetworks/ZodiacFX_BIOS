@@ -33,13 +33,6 @@
 
 #include "conf_bios.h"
 
-struct integrity_check
-{
-	uint8_t		signature[2];
-	uint32_t	length;
-	uint8_t		device[2];
-} __attribute__((__packed__));
-
 void task_command(char *str, char * str_last);
 
 #endif /* COMMANDS_H_ */

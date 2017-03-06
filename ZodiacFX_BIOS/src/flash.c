@@ -34,10 +34,13 @@
 #include "flash.h"
 #include "conf_bios.h"
 #include "cmd_line.h"
+#include "trace.h"
 
 // Global variables
 uint8_t shared_buffer[SHARED_BUFFER_LEN];
-extern struct integrity_check verify;
+struct verification_data	verify;
+
+extern bool bios_debug;
 
 // Static variables
 static uint32_t page_addr;
@@ -106,32 +109,81 @@ void firmware_buffer_init(void)
 /*
 *	Firmware check function
 *
+*		Zodiac FX flash is broken into two main firmware regions:
+*			- running firmware region
+*			- update buffer region
+*
+*		This function checks the validity and state of each region,
+*		with the following return values:
+*			- 0 (SKIP): no action required - both regions either doesn't
+*					exist, or are invalid (a manual firmware update is needed)
+*			- 1 (UPDATE): update required - update buffer region is valid, and
+*					 must be copied over the running firmware region
+*			- 2 (RUN): run existing firmware - update buffer region either
+*					 doesn't exist, or is invalid
 */
 int firmware_check(void)
 {
 	unsigned long* firmware_pmem = (unsigned long*)FLASH_STORE;
 	unsigned long* buffer_pmem = (unsigned long*)FLASH_BUFFER;
 	
-	if(*buffer_pmem == 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
+	if(*firmware_pmem == 0xFFFFFFFF)
 	{
-		return -1;		// No firmware in the buffer or run locations
-	}
-	
-	if(*buffer_pmem != 0xFFFFFFFF && *firmware_pmem == 0xFFFFFFFF)
-	{
-		return 0;		// No firmware in the run location but there is in the buffer
-	}
-
-	while(firmware_pmem <= FLASH_BUFFER_END)
-	{
-		if(*firmware_pmem != *buffer_pmem)
+		// running firmware does not exist
+		
+		if(*buffer_pmem == 0xFFFFFFFF)
 		{
-			return 0;		// Buffer and run location are different so there must be a new version
+			// update firmware does not exist
+			
+			return SKIP;
 		}
-		buffer_pmem++;
-		firmware_pmem++;
+		else
+		{
+			// update firmware exists
+			
+			if(verification_check() == SUCCESS)
+			{
+				// firmware is valid
+			
+				return UPDATE;
+			}
+			else
+			{
+				// firmware is invalid
+				
+				return SKIP;
+			}
+		}
 	}
-	return 1;			// Buffer and run location are the same so run the firmware
+	else
+	{
+		// running firmware exists
+		
+		if(*buffer_pmem == 0xFFFFFFFF)
+		{
+			// update firmware does not exist
+			
+			return RUN;
+		}
+		else
+		{
+			// update firmware exists
+			
+			if(verification_check() == SUCCESS)
+			{
+				// firmware is valid
+			
+				return UPDATE;
+			}
+			else
+			{
+				// firmware is invalid
+				
+				return RUN;
+			}
+		}
+		
+	}
 }
 
 
@@ -470,70 +522,72 @@ int write_verification(uint32_t location, uint64_t value)
 	return 0;
 }
 
-/*
-*	Check test verification value in flash
-*
-*/
-int get_verification(void)
-{
-	char* pflash = (char*)(FLASH_BUFFER_END-1);
-	char* buffer_start = (char*)FLASH_BUFFER;
-	
-	while(((*pflash) == '\xFF' || (*pflash) == '\0') && pflash > buffer_start)
-	{
-		pflash--;
-	}
-
-	if(pflash > buffer_start)
-	{
-		pflash-=7;
-
-		//memcpy(value, pflash, 8);
-		memcpy(&verify, pflash, 8);
-			
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
-}
-
 int verification_check(void)
 {
-	// Populate integrity_check verify structure variable
-	get_verification();
+	char* fw_end_pmem	= (char*)FLASH_BUFFER_END;	// Buffer pointer to store the last address
+	char* fw_step_pmem  = (char*)FLASH_BUFFER;		// Buffer pointer to the starting address
+	uint32_t crc_sum	= 0;						// Store CRC sum
+	uint8_t	 pad_error	= 0;						// Set when padding is not found
 	
-	if(!(verify.signature[0] == 'N' && verify.signature[1] == 'N'))
+	/* Add all bytes of the uploaded firmware */
+	// Decrement the pointer until the previous address has data in it (not 0xFF)
+	while(*(fw_end_pmem-1) == '\xFF' && fw_end_pmem > FLASH_BUFFER)
 	{
-		return 1;
+		fw_end_pmem--;
 	}
-	else if(!(verify.device[0] == 'F' && verify.device[1] == 'X'))
+
+	for(int sig=1; sig<=4; sig++)
 	{
-		return 2;
+		if(*(fw_end_pmem-sig) != NULL)
+		{
+			TRACE("signature padding %d not found - last address: %08x", sig, fw_end_pmem);
+			pad_error = 1;
+		}
+		else
+		{
+			TRACE("signature padding %d found", sig);
+		}
+	}
+	
+	// Start summing all bytes
+	if(pad_error)
+	{
+		// Calculate CRC for debug
+		while(fw_step_pmem < fw_end_pmem)
+		{
+			crc_sum += *fw_step_pmem;
+			fw_step_pmem++;
+		}
 	}
 	else
 	{
-		// Compare specified length and uploaded binary length
-		char* pflash = (char*)(FLASH_BUFFER_END-1);
-		char* buffer_start = (char*)FLASH_BUFFER;
-		
-		while(*(pflash-1) == '\xFF' || *(pflash-1) == '\0')
+		// Exclude CRC & padding from calculation
+		while(fw_step_pmem < (fw_end_pmem-8))
 		{
-			if(pflash == buffer_start)
-			{
-				return 3;
-			}
-			pflash--;
+			crc_sum += *fw_step_pmem;
+			fw_step_pmem++;
 		}
-
-		if((pflash-buffer_start) != (char*)verify.length)
-		{
-			return 4;
-		}
-		
 	}
-		
-	return 0;
-
+	
+	TRACE("fw_step_pmem %08x; fw_end_pmem %08x;", fw_step_pmem, fw_end_pmem);
+	
+	// Update structure entry
+	TRACE("CRC sum:   %04x", crc_sum);
+	verify.calculated = crc_sum;
+	
+	/* Compare with last 4 bytes of firmware */
+	// Get last 4 bytes of firmware	(4-byte CRC, 4-byte padding)
+	verify.found = *(uint32_t*)(fw_end_pmem - 8);
+	
+	TRACE("CRC found: %04x", verify.found);
+	
+	// Compare calculated and found CRC
+	if(verify.found == verify.calculated)
+	{
+		return SUCCESS;	
+	}
+	else
+	{
+		return FAILURE;
+	}
 }

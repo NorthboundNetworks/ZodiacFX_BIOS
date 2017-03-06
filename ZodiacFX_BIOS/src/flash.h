@@ -46,8 +46,13 @@ void xmodem_clear_padding(uint8_t *buff);
 
 // Verification testing commands
 int write_verification(uint32_t location, uint64_t value);
-int get_verification(void);
 int verification_check(void);
+
+struct verification_data
+{
+	uint32_t calculated;	// Last 4 bytes from summed data
+	uint32_t found;			// 4 bytes at the end of uploaded firmware
+};
 
 #define X_EOT 0x04
 #define X_ACK 0x06
@@ -57,5 +62,11 @@ int verification_check(void);
 //#define NEW_FW_BASE			(IFLASH_ADDR + (5*IFLASH_NB_OF_PAGES/8)*IFLASH_PAGE_SIZE)
 #define NEW_FW_MAX_SIZE		196608
 
+#define SUCCESS 0
+#define FAILURE 1
+
+#define SKIP	0
+#define UPDATE	1
+#define RUN		2
 
 #endif /* FLASH_H_ */
