@@ -75,6 +75,10 @@ int main (void)
 			firmware_update();
 			firmware_run();
 		}
+		else
+		{
+			firmware_run();
+		}
 	}
 	  
 	uint32_t wdt_mode, timeout_value;
