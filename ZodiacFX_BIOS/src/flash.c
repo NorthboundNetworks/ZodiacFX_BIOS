@@ -34,10 +34,13 @@
 #include "flash.h"
 #include "conf_bios.h"
 #include "cmd_line.h"
+#include "trace.h"
 
 // Global variables
 uint8_t shared_buffer[SHARED_BUFFER_LEN];
 struct verification_data	verify;
+
+extern bool bios_debug;
 
 // Static variables
 static uint32_t page_addr;

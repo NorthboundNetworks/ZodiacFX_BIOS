@@ -35,10 +35,11 @@
 #include "cmd_line.h"
 #include "flash.h"
 
-
 // Global variables
 int charcount, charcount_last;
 uint32_t uid_buf[4];
+
+bool bios_debug = 0;
 
 /*
 *	This function is where bad code goes to die!
@@ -93,6 +94,8 @@ int main (void)
 	irq_initialize_vectors(); // Initialize interrupt vector table support.
 	cpu_irq_enable(); // Enable interrupts
 	stdio_usb_init();
+	
+	bios_debug = 1;
 	
 	while(1)
 	{

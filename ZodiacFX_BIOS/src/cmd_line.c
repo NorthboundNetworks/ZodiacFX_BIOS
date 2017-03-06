@@ -35,7 +35,7 @@
 #include "conf_bios.h"
 #include "cmd_line.h"
 #include "flash.h"
-
+#include "trace.h"
 
 #define RSTC_KEY  0xA5000000
 
