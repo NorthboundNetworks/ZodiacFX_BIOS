@@ -43,11 +43,8 @@ struct verification_data	verify;
 extern bool bios_debug;
 
 // Static variables
-static uint32_t page_addr;
 static	uint32_t ul_test_page_addr;
 static	uint32_t ul_rc;
-static	uint32_t ul_idx;
-static	uint32_t ul_page_buffer[IFLASH_PAGE_SIZE / sizeof(uint32_t)];
 
 /*
 *	Get the unique serial number from the CPU
@@ -60,7 +57,7 @@ void get_serial(uint32_t *uid_buf)
 }
 
 /*
-*	Firmware update function
+*	Initialise firmware buffer region (upper region for new firmware)
 *
 */
 void firmware_buffer_init(void)
@@ -472,7 +469,7 @@ int xmodem_xfer(void)
 *	Remove XMODEM 0x1A padding at end of data
 *
 */
-xmodem_clear_padding(uint8_t *buff)
+void xmodem_clear_padding(uint8_t *buff)
 {
 	int len = IFLASH_PAGE_SIZE;
 	
@@ -590,6 +587,8 @@ int verification_check(void)
 	{
 		return FAILURE;
 	}
+}
+
 int test_write_command(uint32_t addr)
 {
 	ul_test_page_addr = addr;
