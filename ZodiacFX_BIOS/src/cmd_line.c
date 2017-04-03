@@ -201,23 +201,23 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 	if (strcmp(command, "check_firmware")==0)
 	{
 		int ret = firmware_check();
-		if(ret == 0)
+		if(ret == SKIP)
 		{
 			printf("\r\n");
-			printf("new version found - needs to be written\r\n");
+			printf("bootloader action - skip\r\n");
 			printf("\r\n");
 		}
-		else if(ret == -1)
+		else if(ret == UPDATE)
 		{
 			printf("\r\n");
-			printf("no firmware found in buffer or run locations\r\n");
+			printf("bootloader action - update\r\n");
 			printf("\r\n");
 			return;
 		}
-		else if(ret == 1)
+		else if(ret == RUN)
 		{
 			printf("\r\n");
-			printf("buffer and run locations are identical\r\n");
+			printf("bootloader action - run\r\n");
 			printf("\r\n");
 			return;
 		}
