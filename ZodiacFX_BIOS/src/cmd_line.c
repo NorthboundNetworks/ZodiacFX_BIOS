@@ -197,15 +197,6 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		return;
 	}
 	
-	// Check test verification value in flash
-	if (strcmp(command, "check_verification")==0)
-	{
-
-
-		
-		return;
-	}
-	
 	// Check uploaded firmware
 	if (strcmp(command, "check_firmware")==0)
 	{
