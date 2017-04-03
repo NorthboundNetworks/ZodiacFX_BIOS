@@ -239,6 +239,66 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		return;
 	}
 	
+	/* Internal Test Functions */
+		
+	// Test page erase
+	if (strcmp(command, "t_erase_page")==0)
+	{
+		test_erase_command(0x00448000);
+				
+		return;
+	}
+		
+	// Test low region erase
+	if (strcmp(command, "t_erase_low")==0)
+	{
+		// Erase 0x0041 0000 -> 0x0044 7FFF
+		firmware_store_init();
+			
+		return;
+	}
+		
+	// Test high region erase
+	if (strcmp(command, "t_erase_high")==0)
+	{
+		// Erase 0x0044 8000 -> 0x0047 FFFF
+		firmware_buffer_init();
+			
+		return;
+	}
+				
+	// Test low region write
+	if (strcmp(command, "t_write_low")==0)
+	{
+		// Write 0x0041 0000 -> 0x0044 7FFF
+		if(test_write_command(0x00410000) == FAILURE)
+		{
+			printf("write failed\r\n");
+		}
+				
+		return;
+	}
+	
+	// Test high region write
+	if (strcmp(command, "t_write_high")==0)
+	{
+		// Write 0x0044 8000 -> 0x0047 FFFF
+		if(test_write_command(0x00448000) == FAILURE)
+		{
+			printf("write failed\r\n");
+		}
+		
+		return;
+	}
+
+	// Test high -> low region copy
+	if (strcmp(command, "t_copy")==0)
+	{
+		firmware_update();
+	
+		return;
+	}
+	
 	// Unknown Command
 	printf("Unknown command\r\n");
 	return;

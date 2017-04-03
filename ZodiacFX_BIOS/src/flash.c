@@ -590,4 +590,45 @@ int verification_check(void)
 	{
 		return FAILURE;
 	}
+int test_write_command(uint32_t addr)
+{
+	ul_test_page_addr = addr;
+	
+	for(uint16_t i=0;i<512;i++)
+	{
+		shared_buffer[i] = 'U';
+	}
+	
+	for(uint16_t i=0;i<448;i++)
+	{
+		if(!flash_write_page(&shared_buffer))
+		{
+			printf("write error\r\n");
+		}
+	}
+	
+	return SUCCESS;
+}
+
+int test_erase_command(uint32_t addr)
+{
+	ul_test_page_addr = addr;
+
+		
+	/* Initialize flash: 6 wait states for flash writing. */
+	ul_rc = flash_init(FLASH_ACCESS_MODE_128, 6);
+	if (ul_rc != FLASH_RC_OK) {
+		printf("Buffer initialization error %lu\n\r", (unsigned long)ul_rc);
+		return FAILURE;
+	}
+		
+	// Erase test
+	ul_rc = flash_erase_page(ul_test_page_addr, IFLASH_ERASE_PAGES_32);
+	if (ul_rc != FLASH_RC_OK)
+	{
+		printf("Buffer erase error %lu\n\r", (unsigned long)ul_rc);
+		return FAILURE;
+	}
+	
+	return SUCCESS;
 }

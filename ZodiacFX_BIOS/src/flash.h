@@ -48,6 +48,9 @@ void xmodem_clear_padding(uint8_t *buff);
 int write_verification(uint32_t location, uint64_t value);
 int verification_check(void);
 
+int test_write_command(uint32_t addr);
+int test_erase_command(uint32_t addr);
+
 struct verification_data
 {
 	uint32_t calculated;	// Last 4 bytes from summed data
