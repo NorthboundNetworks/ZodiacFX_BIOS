@@ -86,18 +86,65 @@ void firmware_buffer_init(void)
 		unlock_address += IFLASH_LOCK_REGION_SIZE;
 	}
 
-	// Erase 3 64k sectors
+	// Erase 32 pages at a time
 	uint32_t erase_address = ul_test_page_addr;
 	while(erase_address < FLASH_BUFFER_END)
 	{
-		ul_rc = flash_erase_sector(erase_address);
+		ul_rc = flash_erase_page(ul_test_page_addr, IFLASH_ERASE_PAGES_32);
 		if (ul_rc != FLASH_RC_OK)
 		{
 			printf("Buffer erase error %lu\n\r", (unsigned long)ul_rc);
 			return;
 		}
 		
-		erase_address += ERASE_SECTOR_SIZE;
+		erase_address += ((uint8_t)32*IFLASH_PAGE_SIZE);
+	}
+	
+	return;
+}
+
+/*
+*	Initialise firmware run region (lower region to copy new firmware)
+*
+*/
+void firmware_store_init(void)
+{
+	ul_test_page_addr = FLASH_STORE;
+	
+	/* Initialize flash: 6 wait states for flash writing. */
+	ul_rc = flash_init(FLASH_ACCESS_MODE_128, 6);
+	if (ul_rc != FLASH_RC_OK) {
+		printf("Firmware initialization error %lu\n\r", (unsigned long)ul_rc);
+		return;
+	}
+	
+	// Unlock 8k lock regions (these should be unlocked by default)
+	uint32_t unlock_address = ul_test_page_addr;
+	while(unlock_address < FLASH_STORE_END)
+	{
+		ul_rc = flash_unlock(unlock_address,
+		unlock_address + (4*IFLASH_PAGE_SIZE) - 1, 0, 0);
+		if (ul_rc != FLASH_RC_OK)
+		{
+			printf("Firmware unlock error %lu\n\r", (unsigned long)ul_rc);
+			return;
+		}
+		
+		unlock_address += IFLASH_LOCK_REGION_SIZE;
+	}
+
+	// Erase 3 64k sectors
+	uint32_t erase_address = ul_test_page_addr;
+	while(erase_address < FLASH_STORE_END)
+	{
+		ul_rc = flash_erase_page(ul_test_page_addr, IFLASH_ERASE_PAGES_32);
+		if (ul_rc != FLASH_RC_OK)
+		{
+			printf("Firmware erase error %lu\n\r", (unsigned long)ul_rc);
+			return;
+		}
+		
+		erase_address += ((uint8_t)32*IFLASH_PAGE_SIZE);
 	}
 	
 	return;
@@ -181,53 +228,6 @@ int firmware_check(void)
 		}
 		
 	}
-}
-
-
-/*
-*	Firmware update function
-*
-*/
-void firmware_store_init(void)
-{	
-	ul_test_page_addr = FLASH_STORE;
-	
-	/* Initialize flash: 6 wait states for flash writing. */
-	ul_rc = flash_init(FLASH_ACCESS_MODE_128, 6);
-	if (ul_rc != FLASH_RC_OK) {
-		printf("Firmware initialization error %lu\n\r", (unsigned long)ul_rc);
-		return;
-	}
-	
-	// Unlock 8k lock regions (these should be unlocked by default)
-	uint32_t unlock_address = ul_test_page_addr;
-	while(unlock_address < FLASH_STORE_END)
-	{
-		ul_rc = flash_unlock(unlock_address,
-		unlock_address + (4*IFLASH_PAGE_SIZE) - 1, 0, 0);
-		if (ul_rc != FLASH_RC_OK)
-		{
-			printf("Firmware unlock error %lu\n\r", (unsigned long)ul_rc);
-			return;
-		}
-		
-		unlock_address += IFLASH_LOCK_REGION_SIZE;
-	}
-
-	// Erase 3 64k sectors
-	uint32_t erase_address = ul_test_page_addr;
-	while(erase_address < FLASH_STORE_END)
-	{
-		ul_rc = flash_erase_sector(erase_address);
-		if (ul_rc != FLASH_RC_OK)
-		{
-			printf("Firmware erase error %lu\n\r", (unsigned long)ul_rc);
-			return;
-		}
-		erase_address += ERASE_SECTOR_SIZE;
-	}
-	
-	return;
 }
 
 /*
