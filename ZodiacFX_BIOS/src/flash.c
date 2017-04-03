@@ -90,7 +90,7 @@ void firmware_buffer_init(void)
 	uint32_t erase_address = ul_test_page_addr;
 	while(erase_address < FLASH_BUFFER_END)
 	{
-		ul_rc = flash_erase_page(ul_test_page_addr, IFLASH_ERASE_PAGES_32);
+		ul_rc = flash_erase_page(erase_address, IFLASH_ERASE_PAGES_32);
 		if (ul_rc != FLASH_RC_OK)
 		{
 			printf("Buffer erase error %lu\n\r", (unsigned long)ul_rc);
@@ -133,7 +133,7 @@ void firmware_store_init(void)
 		unlock_address += IFLASH_LOCK_REGION_SIZE;
 	}
 
-	// Erase 3 64k sectors
+	// Erase 32 pages at a time
 	uint32_t erase_address = ul_test_page_addr;
 	while(erase_address < FLASH_STORE_END)
 	{
