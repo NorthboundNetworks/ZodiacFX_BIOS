@@ -43,11 +43,8 @@ struct verification_data	verify;
 extern bool bios_debug;
 
 // Static variables
-static uint32_t page_addr;
 static	uint32_t ul_test_page_addr;
 static	uint32_t ul_rc;
-static	uint32_t ul_idx;
-static	uint32_t ul_page_buffer[IFLASH_PAGE_SIZE / sizeof(uint32_t)];
 
 /*
 *	Get the unique serial number from the CPU
@@ -60,7 +57,7 @@ void get_serial(uint32_t *uid_buf)
 }
 
 /*
-*	Firmware update function
+*	Initialise firmware buffer region (upper region for new firmware)
 *
 */
 void firmware_buffer_init(void)
@@ -89,18 +86,65 @@ void firmware_buffer_init(void)
 		unlock_address += IFLASH_LOCK_REGION_SIZE;
 	}
 
-	// Erase 3 64k sectors
+	// Erase 32 pages at a time
 	uint32_t erase_address = ul_test_page_addr;
 	while(erase_address < FLASH_BUFFER_END)
 	{
-		ul_rc = flash_erase_sector(erase_address);
+		ul_rc = flash_erase_page(erase_address, IFLASH_ERASE_PAGES_32);
 		if (ul_rc != FLASH_RC_OK)
 		{
 			printf("Buffer erase error %lu\n\r", (unsigned long)ul_rc);
 			return;
 		}
 		
-		erase_address += ERASE_SECTOR_SIZE;
+		erase_address += ((uint8_t)32*IFLASH_PAGE_SIZE);
+	}
+	
+	return;
+}
+
+/*
+*	Initialise firmware run region (lower region to copy new firmware)
+*
+*/
+void firmware_store_init(void)
+{
+	ul_test_page_addr = FLASH_STORE;
+	
+	/* Initialize flash: 6 wait states for flash writing. */
+	ul_rc = flash_init(FLASH_ACCESS_MODE_128, 6);
+	if (ul_rc != FLASH_RC_OK) {
+		printf("Firmware initialization error %lu\n\r", (unsigned long)ul_rc);
+		return;
+	}
+	
+	// Unlock 8k lock regions (these should be unlocked by default)
+	uint32_t unlock_address = ul_test_page_addr;
+	while(unlock_address < FLASH_STORE_END)
+	{
+		ul_rc = flash_unlock(unlock_address,
+		unlock_address + (4*IFLASH_PAGE_SIZE) - 1, 0, 0);
+		if (ul_rc != FLASH_RC_OK)
+		{
+			printf("Firmware unlock error %lu\n\r", (unsigned long)ul_rc);
+			return;
+		}
+		
+		unlock_address += IFLASH_LOCK_REGION_SIZE;
+	}
+
+	// Erase 32 pages at a time
+	uint32_t erase_address = ul_test_page_addr;
+	while(erase_address < FLASH_STORE_END)
+	{
+		ul_rc = flash_erase_page(ul_test_page_addr, IFLASH_ERASE_PAGES_32);
+		if (ul_rc != FLASH_RC_OK)
+		{
+			printf("Firmware erase error %lu\n\r", (unsigned long)ul_rc);
+			return;
+		}
+		
+		erase_address += ((uint8_t)32*IFLASH_PAGE_SIZE);
 	}
 	
 	return;
@@ -184,53 +228,6 @@ int firmware_check(void)
 		}
 		
 	}
-}
-
-
-/*
-*	Firmware update function
-*
-*/
-void firmware_store_init(void)
-{	
-	ul_test_page_addr = FLASH_STORE;
-	
-	/* Initialize flash: 6 wait states for flash writing. */
-	ul_rc = flash_init(FLASH_ACCESS_MODE_128, 6);
-	if (ul_rc != FLASH_RC_OK) {
-		printf("Firmware initialization error %lu\n\r", (unsigned long)ul_rc);
-		return;
-	}
-	
-	// Unlock 8k lock regions (these should be unlocked by default)
-	uint32_t unlock_address = ul_test_page_addr;
-	while(unlock_address < FLASH_STORE_END)
-	{
-		ul_rc = flash_unlock(unlock_address,
-		unlock_address + (4*IFLASH_PAGE_SIZE) - 1, 0, 0);
-		if (ul_rc != FLASH_RC_OK)
-		{
-			printf("Firmware unlock error %lu\n\r", (unsigned long)ul_rc);
-			return;
-		}
-		
-		unlock_address += IFLASH_LOCK_REGION_SIZE;
-	}
-
-	// Erase 3 64k sectors
-	uint32_t erase_address = ul_test_page_addr;
-	while(erase_address < FLASH_STORE_END)
-	{
-		ul_rc = flash_erase_sector(erase_address);
-		if (ul_rc != FLASH_RC_OK)
-		{
-			printf("Firmware erase error %lu\n\r", (unsigned long)ul_rc);
-			return;
-		}
-		erase_address += ERASE_SECTOR_SIZE;
-	}
-	
-	return;
 }
 
 /*
@@ -472,7 +469,7 @@ int xmodem_xfer(void)
 *	Remove XMODEM 0x1A padding at end of data
 *
 */
-xmodem_clear_padding(uint8_t *buff)
+void xmodem_clear_padding(uint8_t *buff)
 {
 	int len = IFLASH_PAGE_SIZE;
 	
@@ -590,4 +587,47 @@ int verification_check(void)
 	{
 		return FAILURE;
 	}
+}
+
+int test_write_command(uint32_t addr)
+{
+	ul_test_page_addr = addr;
+	
+	for(uint16_t i=0;i<512;i++)
+	{
+		shared_buffer[i] = 'U';
+	}
+	
+	for(uint16_t i=0;i<448;i++)
+	{
+		if(!flash_write_page(&shared_buffer))
+		{
+			printf("write error\r\n");
+		}
+	}
+	
+	return SUCCESS;
+}
+
+int test_erase_command(uint32_t addr)
+{
+	ul_test_page_addr = addr;
+
+		
+	/* Initialize flash: 6 wait states for flash writing. */
+	ul_rc = flash_init(FLASH_ACCESS_MODE_128, 6);
+	if (ul_rc != FLASH_RC_OK) {
+		printf("Buffer initialization error %lu\n\r", (unsigned long)ul_rc);
+		return FAILURE;
+	}
+		
+	// Erase test
+	ul_rc = flash_erase_page(ul_test_page_addr, IFLASH_ERASE_PAGES_32);
+	if (ul_rc != FLASH_RC_OK)
+	{
+		printf("Buffer erase error %lu\n\r", (unsigned long)ul_rc);
+		return FAILURE;
+	}
+	
+	return SUCCESS;
 }

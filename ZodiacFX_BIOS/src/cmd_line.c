@@ -197,36 +197,27 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		return;
 	}
 	
-	// Check test verification value in flash
-	if (strcmp(command, "check_verification")==0)
-	{
-
-
-		
-		return;
-	}
-	
 	// Check uploaded firmware
 	if (strcmp(command, "check_firmware")==0)
 	{
 		int ret = firmware_check();
-		if(ret == 0)
+		if(ret == SKIP)
 		{
 			printf("\r\n");
-			printf("new version found - needs to be written\r\n");
+			printf("bootloader action - skip\r\n");
 			printf("\r\n");
 		}
-		else if(ret == -1)
+		else if(ret == UPDATE)
 		{
 			printf("\r\n");
-			printf("no firmware found in buffer or run locations\r\n");
+			printf("bootloader action - update\r\n");
 			printf("\r\n");
 			return;
 		}
-		else if(ret == 1)
+		else if(ret == RUN)
 		{
 			printf("\r\n");
-			printf("buffer and run locations are identical\r\n");
+			printf("bootloader action - run\r\n");
 			printf("\r\n");
 			return;
 		}
@@ -245,6 +236,66 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 			printf("\r\n");
 		}
 		
+		return;
+	}
+	
+	/* Internal Test Functions */
+		
+	// Test page erase
+	if (strcmp(command, "t_erase_page")==0)
+	{
+		test_erase_command(0x00448000);
+				
+		return;
+	}
+		
+	// Test low region erase
+	if (strcmp(command, "t_erase_low")==0)
+	{
+		// Erase 0x0041 0000 -> 0x0044 7FFF
+		firmware_store_init();
+			
+		return;
+	}
+		
+	// Test high region erase
+	if (strcmp(command, "t_erase_high")==0)
+	{
+		// Erase 0x0044 8000 -> 0x0047 FFFF
+		firmware_buffer_init();
+			
+		return;
+	}
+				
+	// Test low region write
+	if (strcmp(command, "t_write_low")==0)
+	{
+		// Write 0x0041 0000 -> 0x0044 7FFF
+		if(test_write_command(0x00410000) == FAILURE)
+		{
+			printf("write failed\r\n");
+		}
+				
+		return;
+	}
+	
+	// Test high region write
+	if (strcmp(command, "t_write_high")==0)
+	{
+		// Write 0x0044 8000 -> 0x0047 FFFF
+		if(test_write_command(0x00448000) == FAILURE)
+		{
+			printf("write failed\r\n");
+		}
+		
+		return;
+	}
+
+	// Test high -> low region copy
+	if (strcmp(command, "t_copy")==0)
+	{
+		firmware_update();
+	
 		return;
 	}
 	
