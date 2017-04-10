@@ -299,6 +299,38 @@ void command_root(char *command, char *param1, char *param2, char *param3)
 		return;
 	}
 	
+	if (strcmp(command, "dump")==0 && strcmp(param1, "upper")==0)
+	{
+		uint8_t* buffer_pmem = FLASH_BUFFER;
+		while(buffer_pmem < FLASH_BUFFER_END)
+		{
+			printf("%02x", *buffer_pmem);
+			buffer_pmem++;
+		}
+		printf("\n");
+		
+		return;
+	}
+	
+	if (strcmp(command, "dump")==0 && strcmp(param1, "lower")==0)
+	{
+		uint8_t* buffer_pmem = FLASH_STORE;
+		while(buffer_pmem < FLASH_STORE_END)
+		{
+			printf("%02x", *buffer_pmem);
+			buffer_pmem++;
+		}
+		printf("\n");	
+			
+		return;
+	}
+	
+	if (strcmp(command, "run")==0)
+	{
+		firmware_run();
+		return;
+	}
+	
 	// Unknown Command
 	printf("Unknown command\r\n");
 	return;
